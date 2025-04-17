@@ -166,7 +166,7 @@ hold on % Plot reachable set
 
 for i = 2:size(Z_OverApp,1)
     for j = 1:2^(i-1)
-        if j <= 32
+        if j <= 60
             plot(Z_OverApp{i,j},colors(10,:),0.3) % Plot reachable set
         end
     end
