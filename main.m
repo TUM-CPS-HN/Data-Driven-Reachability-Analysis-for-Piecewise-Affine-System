@@ -7,7 +7,7 @@
 clear;
 close all;
 
-N = 15;     % Number of discrete time steps
+N = 9;     % Number of discrete time steps
 overapproximation_steps = 100; %overapproximation of family set steps
 bounds = 3; % Bounds on state space for analysis (assuming [-bounds bounds] in each dimension)
 
@@ -44,7 +44,7 @@ W_noise = zonotope(zeros(dim_x,1), 0.0001*ones(dim_x,1));
 [Ab1, Ab2] = OverApproximation(X0, U_OverAPP, W_noise, dim_x, Ad1, Bd1, Ad2, Bd2, overapproximation_steps);
 
 % Time comparison for different numbers of steps
-for i = 1:9  
+for i = 1:N 
     [Z_OverApp, Z,time_model, time_data] = timecompare(Ab1, Ab2, Z0, U_new, W_noise, i, Ad1, Bd1, Ad2, Bd2); 
     % Store results
     results(i, :) = {i, time_data, time_model};
@@ -126,30 +126,6 @@ ylim([0 max(results.Time_Data)*1.1])
 % fprintf('f(x) = %.4f * e^(%.4f * x)\n', curve_model.a, curve_model.b);
 % fprintf('R^2 = %.4f\n', gof_model.rsquare);
 
-%% Data-based Approach
-% Z_OverApp = CalculatedDataFromOverApp(Ab1, Ab2, Z0, U_new, W_noise,steps);
-
-figure; hold on;
-title('Over Approximation of Various Conditions And True Model Results')
-axis([-2 2 -1 3]);
-xlabel('$x_1$','interpreter','latex')
-ylabel('$x_2$','interpreter','latex')
-set(gca,'fontsize',18,'fontname','times new roman')
-p = plot([0 0], [-bounds bounds], 'g--','linewidth',2); % Guard
-colors_length = 64;
-colors = interp1([1;colors_length],[0 0 1;1 0 0],1:1:colors_length);
-
-plot(Z_OverApp{1,1},colors(10,:),0.1)
-hold on % Plot reachable set
-
-for i = 2:size(Z_OverApp,1)
-    for j = 1:2^(i-1)
-        if j <= 16
-            plot(Z_OverApp{i,j},colors(10,:),0.3) % Plot reachable set
-        end
-    end
-end
-
 %% Model-Based Approach
 X0 = zono(bounds*eye(2),zeros(2,1));
 X0a = halfspaceIntersection(X0,[1 0],0);
@@ -160,16 +136,42 @@ Phib = [eye(2);Ad2]*X0b + [zeros(2,1);Bd2];
 
 Phi = union(Phia,Phib);
 
+
+figure; hold on;
+title('Over Approximation of Various Conditions And True Model Results')
+axis([-2 2 -1 3]);
+xlabel('$x_1$','interpreter','latex')
+ylabel('$x_2$','interpreter','latex')
+set(gca,'fontsize',18,'fontname','times new roman')
+p = plot([0 0], [-bounds bounds], 'g--','linewidth',2); % Guard
+
 colors = interp1([1;N+1],[0 0 1;1 0 0],1:1:N+1);
 
 plot(Z0,colors(1,:),1) % Plot initial condition set
 
 % Compute and plot reachable sets
 Z = Z0;
-for i = 1:9
+for i = 1:N
     Z = [zeros(2) eye(2)]*and(Phi,Z,[eye(2) zeros(2)]) + zonotope2zono(W_noise);
     plot(Z,colors(i,:),1) % Plot reachable set
 end
+
+
+%% Data-based Approach
+% Z_OverApp = CalculatedDataFromOverApp(Ab1, Ab2, Z0, U_new, W_noise,steps);
+
+
+plot(Z_OverApp{1,1},colors(10,:),0.1)
+hold on % Plot reachable set
+
+for i = 2:size(Z_OverApp,1)
+    for j = 1:2^(i-1)
+        if j <= 32
+            plot(Z_OverApp{i,j},colors(10,:),0.3) % Plot reachable set
+        end
+    end
+end
+
 
 legend(p,{'Guard'},'interpreter','latex')
 
